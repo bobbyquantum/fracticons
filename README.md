@@ -1,146 +1,197 @@
-# Fracticons
+# Fracticons 🌀
 
-Deterministic fractal avatar generator - like Gravatar/Identicon, but with fractals.
+Generate unique, deterministic fractal avatars from any string. Beautiful, fast, and dependency-free.
 
-Generate unique, beautiful fractal-based avatars from a hash. Each hash produces a consistent, deterministic fractal pattern.
+[![npm version](https://img.shields.io/npm/v/fracticons.svg)](https://www.npmjs.com/package/fracticons)
+[![CI](https://github.com/bobbyquantum/fracticons/actions/workflows/ci.yml/badge.svg)](https://github.com/bobbyquantum/fracticons/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+## ✨ Features
 
-- 🎨 **Beautiful fractals**: Generates Julia set fractals for visually appealing avatars
-- 🔒 **Deterministic**: Same hash always produces the same output
-- 📦 **Zero dependencies**: Pure TypeScript/JavaScript implementation
-- 🎯 **TypeScript first**: Full type definitions included
-- 📐 **SVG output**: Scalable vector graphics that look great at any size
-- ⚡ **Fast**: Efficient algorithms for quick generation
+- 🎨 **Beautiful fractals** - Julia sets with 10 curated color palettes
+- 🔒 **Deterministic** - Same input always produces same output
+- ⚡ **Fast** - ~3ms per 128px avatar
+- 📦 **Zero dependencies** - Custom PNG encoder included
+- 🖼️ **PNG output** - Compact, universal format
+- 🔄 **Symmetric** - Horizontally mirrored for visual appeal
+- 🎛️ **Configurable** - Size, shape, colors, fractal type
 
-## Installation
+## 📦 Installation
 
 ```bash
 npm install fracticons
 ```
 
-## Usage
-
-### Basic Usage
-
-```typescript
-import { generateFracticon } from 'fracticons';
-
-// Generate an SVG avatar from a hash
-// You provide the hash - use any hashing method you prefer
-const hash = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
-const svg = generateFracticon(hash);
-document.getElementById('avatar').innerHTML = svg;
-```
-
-### With Options
-
-```typescript
-import { generateFracticon } from 'fracticons';
-
-const hash = 'your-hash-here...';
-const svg = generateFracticon(hash, {
-  size: 256,        // Output size in pixels (default: 128)
-  resolution: 64,   // Fractal grid resolution (default: 64)
-  circular: true,   // Apply circular mask (default: false)
-  style: 'detailed' // 'detailed' or 'stylized' (default: 'detailed')
-});
-```
-
-### Data URL
+## 🚀 Quick Start
 
 ```typescript
 import { generateFracticonDataURL } from 'fracticons';
 
-// Get a data URL for use in img src
-const hash = 'your-hash-here...';
-const dataUrl = generateFracticonDataURL(hash);
-document.getElementById('avatar').src = dataUrl;
+// Generate a data URL for an avatar
+const avatarUrl = generateFracticonDataURL('user@example.com');
+
+// Use in HTML
+document.querySelector('img').src = avatarUrl;
 ```
 
-### With Metadata
+### Node.js (save to file)
 
 ```typescript
-import { generateFracticonWithMetadata } from 'fracticons';
+import { generateFracticon } from 'fracticons';
+import { writeFileSync } from 'fs';
 
-const hash = 'your-hash-here...';
-const result = generateFracticonWithMetadata(hash);
-console.log(result.svg);     // The SVG string
-console.log(result.hash);    // The hash that was used
-console.log(result.params);  // Fractal parameters used
-console.log(result.palette); // Color palette used
+const pngBuffer = generateFracticon('my-unique-id');
+writeFileSync('avatar.png', pngBuffer);
 ```
 
-## Advanced Usage
+## 🎨 Color Palettes
 
-The library exports internal modules for advanced customization:
+Choose from 10 beautiful color palettes:
 
 ```typescript
-import {
-  // Hash utilities
-  hashToNumbers,
-  
-  // Seeded random number generator
-  SeededRandom,
-  
-  // Fractal generation
-  generateJuliaParams,
-  generateJuliaGrid,
-  juliaIteration,
-  mandelbrotIteration,
-  
-  // Color utilities
-  generatePalette,
-  hslToRgb,
-  rgbToHex,
-  
-  // SVG rendering
-  gridToSVG,
-  generateStylizedSVG,
-  wrapInCircleMask
-} from 'fracticons';
+import { generateFracticonDataURL } from 'fracticons';
+
+// Available palettes: random, fire, ocean, forest, sunset, neon, pastel, monochrome, grayscale, rainbow
+const avatar = generateFracticonDataURL('user@example.com', {
+  paletteStyle: 'ocean'
+});
 ```
 
-## API Reference
+| Palette | Description |
+|---------|-------------|
+| `random` | Procedurally generated (default) |
+| `fire` | Warm reds, oranges, yellows |
+| `ocean` | Cool blues and teals |
+| `forest` | Natural greens and browns |
+| `sunset` | Purple, orange, pink gradients |
+| `neon` | Vibrant, high-contrast colors |
+| `pastel` | Soft, muted tones |
+| `monochrome` | Single color variations |
+| `grayscale` | Black and white |
+| `rainbow` | Full spectrum |
 
-### generateFracticon(hash, options?)
+## ⚙️ Options
 
-Generate an SVG string for a fractal avatar.
+```typescript
+interface FracticonOptions {
+  size?: number;           // Output size in pixels (default: 128)
+  resolution?: number;     // Fractal resolution (default: 64)
+  circular?: boolean;      // Circular mask (default: false)
+  fractalType?: 'julia' | 'mandelbrot' | 'burning-ship' | 'tricorn';
+  preset?: string;         // Julia preset name
+  c?: { real: number; imag: number };  // Custom Julia c value
+  paletteStyle?: PaletteStyle;     // Color palette
+}
+```
 
-**Parameters:**
-- `hash` (string): A hexadecimal hash string to generate the avatar from
-- `options` (FracticonOptions): Optional configuration
-  - `size` (number): Output size in pixels (default: 128)
-  - `resolution` (number): Fractal grid resolution (default: 64)
-  - `circular` (boolean): Apply circular mask (default: false)
-  - `style` ('detailed' | 'stylized'): Avatar style (default: 'detailed')
+### Examples
 
-**Returns:** SVG string
+```typescript
+// Large circular avatar
+generateFracticonDataURL('user123', {
+  size: 256,
+  circular: true
+});
 
-### generateFracticonWithMetadata(hash, options?)
+// Specific fractal type
+generateFracticonDataURL('user123', {
+  fractalType: 'mandelbrot'
+});
 
-Generate a fractal avatar with full metadata.
+// Neon color scheme
+generateFracticonDataURL('user123', {
+  paletteStyle: 'neon'
+});
+```
 
-**Returns:** Object with:
-- `svg` (string): The SVG string
-- `hash` (string): The hash that was used
-- `params` (FractalParams): Fractal parameters used
-- `palette` (ColorPalette): Color palette used
+## 🔧 API
 
-### generateFracticonDataURL(hash, options?)
+### `generateFracticon(input: string, options?: FracticonOptions): Buffer`
 
-Generate a data URL for the fractal avatar.
+Generates a PNG buffer from the input string.
 
-**Returns:** Data URL string (data:image/svg+xml;base64,...)
+### `generateFracticonDataURL(input: string, options?: FracticonOptions): string`
 
-## How It Works
+Generates a base64 data URL suitable for `<img>` src attributes.
 
-1. **Input**: Accepts a hex hash string (you provide your own hash)
-2. **Seeding**: Hash is converted to seed values for a deterministic random number generator
-3. **Parameters**: RNG generates Julia set parameters (complex constant c, zoom level, etc.)
-4. **Palette**: RNG generates a harmonious color palette
-5. **Rendering**: Julia set is computed and rendered to SVG
+### `generateFracticonWithMetadata(input: string, options?: FracticonOptions)`
 
-## License
+Returns both the PNG buffer and metadata about the generated fractal:
 
-MIT
+```typescript
+const { png, metadata } = generateFracticonWithMetadata('user@example.com');
+
+console.log(metadata);
+// {
+//   fractalType: 'julia',
+//   c: { real: -0.8, imag: 0.156 },
+//   palette: [...],
+// }
+```
+
+## 🎯 Julia Presets
+
+The library includes 10 curated Julia set presets for consistently beautiful results:
+
+- `galaxy` - Spiral galaxy patterns
+- `lightning` - Electric, branching forms
+- `seahorse` - Classic seahorse valley
+- `spiral` - Tight spiral structures
+- `dendrite` - Tree-like branching
+- `rabbit` - Douady's rabbit
+- `dragon` - Dragon curve patterns
+- `starfish` - Star-shaped patterns
+- `snowflake` - Crystalline structures
+- `explosion` - Radial burst patterns
+
+By default, the library picks a random preset and applies slight perturbation for variety while maintaining quality.
+
+## 🔬 How It Works
+
+1. **Hash** - Input string is hashed using SHA-256
+2. **Seed** - Hash seeds a deterministic PRNG (xorshift128+)
+3. **Parameters** - PRNG selects fractal parameters near known-good presets
+4. **Render** - Fractal is rendered and horizontally mirrored
+5. **Encode** - Custom PNG encoder outputs compressed image
+
+### Quality Filtering
+
+The library automatically rejects "boring" fractals:
+- More than 25% black pixels → regenerate
+- Fewer than 8 unique iteration values → regenerate
+- Up to 10 attempts before falling back
+
+## 📊 Performance
+
+| Size | Time |
+|------|------|
+| 64px | ~1ms |
+| 128px | ~3ms |
+| 256px | ~10ms |
+| 512px | ~35ms |
+
+## 🌐 Browser Support
+
+Works in all modern browsers. The PNG encoder uses `TextEncoder` for compression.
+
+```html
+<script type="module">
+  import { generateFracticonDataURL } from 'https://unpkg.com/fracticons';
+  
+  document.getElementById('avatar').src = generateFracticonDataURL('hello@world.com');
+</script>
+```
+
+## 📄 License
+
+MIT © bobbyquantum
+
+## 🤝 Contributing
+
+Contributions welcome! Please open an issue or pull request.
+
+---
+
+<p align="center">
+  Made with 🌀 by the Fracticons team
+</p>

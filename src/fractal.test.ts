@@ -3,8 +3,11 @@ import {
   juliaIteration, 
   generateJuliaGrid, 
   generateJuliaParams,
+  generateFractalParams,
+  generateFractalGrid,
   mandelbrotIteration,
-  generateMandelbrotGrid 
+  generateMandelbrotGrid,
+  calculateGridEntropy
 } from './fractal.js';
 import { SeededRandom } from './random.js';
 
@@ -122,5 +125,104 @@ describe('generateJuliaParams', () => {
     const params2 = generateJuliaParams(rng2);
 
     expect(params1).toEqual(params2);
+  });
+});
+
+describe('calculateGridEntropy', () => {
+  it('should return low score for mostly empty grid', () => {
+    // Grid where almost everything escapes (low iteration values)
+    const grid: number[][] = Array(32).fill(null).map(() => Array(32).fill(1));
+    const result = calculateGridEntropy(grid, 50);
+    
+    expect(result.score).toBeLessThan(0.5);
+    expect(result.inSetRatio).toBe(0);
+    expect(result.uniqueValues).toBe(1);
+  });
+
+  it('should return low score for mostly filled grid', () => {
+    // Grid where almost everything is in the set (maxIterations)
+    const grid: number[][] = Array(32).fill(null).map(() => Array(32).fill(50));
+    const result = calculateGridEntropy(grid, 50);
+    
+    expect(result.score).toBeLessThan(0.5);
+    expect(result.inSetRatio).toBe(1);
+    expect(result.uniqueValues).toBe(1);
+  });
+
+  it('should return higher score for varied grid', () => {
+    // Grid with good variety of values
+    const grid: number[][] = [];
+    for (let y = 0; y < 32; y++) {
+      const row: number[] = [];
+      for (let x = 0; x < 32; x++) {
+        // Mix of in-set and escaped with variety
+        if (x < 10) row.push(50); // in-set
+        else row.push(x % 20); // varied escape times
+      }
+      grid.push(row);
+    }
+    const result = calculateGridEntropy(grid, 50);
+    
+    expect(result.score).toBeGreaterThan(0.4);
+    expect(result.inSetRatio).toBeCloseTo(10/32, 1);
+    expect(result.uniqueValues).toBeGreaterThan(10);
+  });
+
+  it('should correctly count unique values', () => {
+    const grid: number[][] = [
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9, 10, 11, 12],
+      [13, 14, 15, 50]
+    ];
+    const result = calculateGridEntropy(grid, 50);
+    
+    expect(result.uniqueValues).toBe(16);
+    expect(result.inSetRatio).toBe(1/16);
+  });
+});
+
+describe('generateFractalParams with entropy filtering', () => {
+  it('should generate params with decent entropy score', () => {
+    const rng = new SeededRandom([11111, 22222]);
+    const params = generateFractalParams(rng);
+    
+    // Generate a grid and check its entropy
+    const grid = generateFractalGrid(32, params);
+    const entropy = calculateGridEntropy(grid, params.maxIterations);
+    
+    // Should have at least some variety
+    expect(entropy.uniqueValues).toBeGreaterThan(1);
+  });
+
+  it('should skip entropy check when skipEntropyCheck is true', () => {
+    const rng1 = new SeededRandom([12345, 67890]);
+    const rng2 = new SeededRandom([12345, 67890]);
+    
+    // With skip, should use first generated params
+    const paramsSkip = generateFractalParams(rng1, { skipEntropyCheck: true });
+    
+    // Without skip, might retry and consume more RNG
+    const paramsCheck = generateFractalParams(rng2, { skipEntropyCheck: false });
+    
+    // Both should return valid params
+    expect(paramsSkip.cx).toBeDefined();
+    expect(paramsCheck.cx).toBeDefined();
+  });
+
+  it('should use preset without entropy check', () => {
+    const rng = new SeededRandom([12345, 67890]);
+    const params = generateFractalParams(rng, { preset: 'galaxy' });
+    
+    expect(params.cx).toBe(-0.4);
+    expect(params.cy).toBe(0.6);
+  });
+
+  it('should use custom c without entropy check', () => {
+    const rng = new SeededRandom([12345, 67890]);
+    const params = generateFractalParams(rng, { c: { real: 0.5, imag: -0.5 } });
+    
+    expect(params.cx).toBe(0.5);
+    expect(params.cy).toBe(-0.5);
   });
 });

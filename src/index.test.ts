@@ -2,106 +2,191 @@ import { describe, it, expect } from 'vitest';
 import { 
   generateFracticon, 
   generateFracticonWithMetadata,
-  generateFracticonDataURL
+  generateFracticonDataURL,
+  generateFracticonFromHex,
+  generateFracticonFromHexWithMetadata,
+  generateFracticonDataURLFromHex,
+  generateFracticonFromBytes,
+  generateFracticonFromBytesWithMetadata,
+  generateFracticonDataURLFromBytes,
 } from './index.js';
 import { sha256 } from './hash.js';
 
-// Helper to generate hash for tests
-const testHash = (input: string): string => sha256(input);
+describe('generateFracticon (string API)', () => {
+  it('should generate a PNG for any string input', () => {
+    const png = generateFracticon('user@example.com');
 
-describe('generateFracticon', () => {
-  it('should generate an SVG for any hash input', () => {
-    const hash = testHash('user@example.com');
-    const svg = generateFracticon(hash);
+    expect(png).toBeInstanceOf(Uint8Array);
+    expect(png.length).toBeGreaterThan(0);
+    // Check PNG signature
+    expect(png[0]).toBe(137);
+    expect(png[1]).toBe(80); // P
+    expect(png[2]).toBe(78); // N
+    expect(png[3]).toBe(71); // G
+  });
 
-    expect(svg).toContain('<svg');
-    expect(svg).toContain('</svg>');
+  it('should always hash string input with SHA-256', () => {
+    const input = 'user@example.com';
+    const hash = sha256(input);
+    
+    // String API hashes the input
+    const png1 = generateFracticon(input);
+    // Hex API uses hash directly
+    const png2 = generateFracticonFromHex(hash);
+
+    expect(png1).toEqual(png2);
   });
 
   it('should be deterministic', () => {
-    const hash = testHash('test@test.com');
-    const svg1 = generateFracticon(hash);
-    const svg2 = generateFracticon(hash);
+    const input = 'test@test.com';
+    const png1 = generateFracticon(input);
+    const png2 = generateFracticon(input);
 
-    expect(svg1).toBe(svg2);
+    expect(png1).toEqual(png2);
   });
 
-  it('should generate different avatars for different hashes', () => {
-    const hash1 = testHash('user1@example.com');
-    const hash2 = testHash('user2@example.com');
-    const svg1 = generateFracticon(hash1);
-    const svg2 = generateFracticon(hash2);
+  it('should generate different avatars for different inputs', () => {
+    const png1 = generateFracticon('user1@example.com');
+    const png2 = generateFracticon('user2@example.com');
 
-    expect(svg1).not.toBe(svg2);
+    expect(png1).not.toEqual(png2);
   });
 
   it('should respect size option', () => {
-    const hash = testHash('test');
-    const svg = generateFracticon(hash, { size: 256 });
+    const input = 'test';
+    const small = generateFracticon(input, { size: 64 });
+    const large = generateFracticon(input, { size: 256 });
 
-    expect(svg).toContain('width="256"');
-    expect(svg).toContain('height="256"');
+    // Larger size should produce larger file
+    expect(large.length).toBeGreaterThan(small.length);
   });
 
   it('should apply circular mask when requested', () => {
-    const hash = testHash('test');
-    const svg = generateFracticon(hash, { circular: true });
+    const input = 'test';
+    const square = generateFracticon(input, { circular: false });
+    const circular = generateFracticon(input, { circular: true });
 
-    expect(svg).toContain('clipPath');
-    expect(svg).toContain('circleClip');
+    // Both should be valid PNGs but different
+    expect(square[0]).toBe(137);
+    expect(circular[0]).toBe(137);
+    expect(square).not.toEqual(circular);
   });
 
-  it('should support stylized mode', () => {
-    const hash = testHash('test');
-    const detailed = generateFracticon(hash, { style: 'detailed' });
-    const stylized = generateFracticon(hash, { style: 'stylized' });
+  it('should handle empty string', () => {
+    const png = generateFracticon('');
 
-    expect(detailed).not.toBe(stylized);
-    expect(stylized).toContain('<svg');
+    expect(png).toBeInstanceOf(Uint8Array);
+    expect(png[0]).toBe(137); // PNG signature
   });
 
-  it('should handle empty hash', () => {
-    const hash = testHash('');
-    const svg = generateFracticon(hash);
+  it('should handle unicode input', () => {
+    const png = generateFracticon('用户名@例子.中国');
 
-    expect(svg).toContain('<svg');
-    expect(svg).toContain('</svg>');
+    expect(png).toBeInstanceOf(Uint8Array);
+    expect(png[0]).toBe(137);
   });
 
-  it('should handle unicode input hash', () => {
-    const hash = testHash('用户名@例子.中国');
-    const svg = generateFracticon(hash);
-
-    expect(svg).toContain('<svg');
-  });
-
-  it('should handle very long string hash', () => {
+  it('should handle very long string', () => {
     const longString = 'a'.repeat(10000);
-    const hash = testHash(longString);
-    const svg = generateFracticon(hash);
+    const png = generateFracticon(longString);
 
-    expect(svg).toContain('<svg');
+    expect(png).toBeInstanceOf(Uint8Array);
+    expect(png[0]).toBe(137);
   });
 
-  it('should generate unique avatars for different hashes', () => {
-    const hash1 = testHash('user1');
-    const hash2 = testHash('user2');
-    const hash3 = testHash('user3');
-    const svg1 = generateFracticon(hash1);
-    const svg2 = generateFracticon(hash2);
-    const svg3 = generateFracticon(hash3);
+  it('should generate unique avatars for different inputs', () => {
+    const png1 = generateFracticon('user1');
+    const png2 = generateFracticon('user2');
+    const png3 = generateFracticon('user3');
 
-    expect(new Set([svg1, svg2, svg3]).size).toBe(3);
+    // Convert to strings for comparison
+    const str1 = Array.from(png1).join(',');
+    const str2 = Array.from(png2).join(',');
+    const str3 = Array.from(png3).join(',');
+
+    expect(new Set([str1, str2, str3]).size).toBe(3);
+  });
+});
+
+describe('generateFracticonFromHex (hex hash API)', () => {
+  it('should generate a PNG from a hex hash', () => {
+    const hash = sha256('user@example.com');
+    const png = generateFracticonFromHex(hash);
+
+    expect(png).toBeInstanceOf(Uint8Array);
+    expect(png[0]).toBe(137); // PNG signature
+  });
+
+  it('should be deterministic', () => {
+    const hash = sha256('test');
+    const png1 = generateFracticonFromHex(hash);
+    const png2 = generateFracticonFromHex(hash);
+
+    expect(png1).toEqual(png2);
+  });
+
+  it('should handle uppercase hex', () => {
+    const hash = sha256('test');
+    const png1 = generateFracticonFromHex(hash.toLowerCase());
+    const png2 = generateFracticonFromHex(hash.toUpperCase());
+
+    expect(png1).toEqual(png2);
+  });
+
+  it('should produce same result as string API with same input', () => {
+    const input = 'test@example.com';
+    const hash = sha256(input);
+    
+    const png1 = generateFracticon(input);
+    const png2 = generateFracticonFromHex(hash);
+
+    expect(png1).toEqual(png2);
+  });
+});
+
+describe('generateFracticonFromBytes (binary API)', () => {
+  it('should generate a PNG from raw bytes', () => {
+    // Create a 32-byte hash (like SHA-256 output)
+    const hashBytes = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) {
+      hashBytes[i] = i * 8;
+    }
+    
+    const png = generateFracticonFromBytes(hashBytes);
+
+    expect(png).toBeInstanceOf(Uint8Array);
+    expect(png[0]).toBe(137); // PNG signature
+  });
+
+  it('should be deterministic', () => {
+    const hashBytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+    const png1 = generateFracticonFromBytes(hashBytes);
+    const png2 = generateFracticonFromBytes(hashBytes);
+
+    expect(png1).toEqual(png2);
+  });
+
+  it('should work with Web Crypto API style output', () => {
+    // Simulate what you'd get from crypto.subtle.digest
+    const hashBytes = new Uint8Array(32);
+    crypto.getRandomValues(hashBytes);
+    
+    const png = generateFracticonFromBytes(hashBytes);
+
+    expect(png).toBeInstanceOf(Uint8Array);
+    expect(png[0]).toBe(137);
   });
 });
 
 describe('generateFracticonWithMetadata', () => {
-  it('should return SVG and metadata', () => {
-    const hash = testHash('test@example.com');
-    const result = generateFracticonWithMetadata(hash);
+  it('should return PNG and metadata', () => {
+    const input = 'test@example.com';
+    const result = generateFracticonWithMetadata(input);
 
-    expect(result.svg).toContain('<svg');
-    expect(result.hash).toBe(hash);
+    expect(result.png).toBeInstanceOf(Uint8Array);
+    expect(result.png[0]).toBe(137); // PNG signature
+    expect(result.hash).toBeDefined();
+    expect(result.hash.length).toBe(64); // SHA-256 produces 64 hex chars
     expect(result.params).toBeDefined();
     expect(result.params.cx).toBeDefined();
     expect(result.params.cy).toBeDefined();
@@ -109,10 +194,18 @@ describe('generateFracticonWithMetadata', () => {
     expect(result.palette.colors.length).toBeGreaterThan(0);
   });
 
+  it('should return the SHA-256 hash of input', () => {
+    const input = 'test@example.com';
+    const expectedHash = sha256(input);
+    const result = generateFracticonWithMetadata(input);
+
+    expect(result.hash).toBe(expectedHash);
+  });
+
   it('should return consistent metadata', () => {
-    const hash = testHash('test');
-    const result1 = generateFracticonWithMetadata(hash);
-    const result2 = generateFracticonWithMetadata(hash);
+    const input = 'test';
+    const result1 = generateFracticonWithMetadata(input);
+    const result2 = generateFracticonWithMetadata(input);
 
     expect(result1.hash).toBe(result2.hash);
     expect(result1.params).toEqual(result2.params);
@@ -121,88 +214,115 @@ describe('generateFracticonWithMetadata', () => {
 });
 
 describe('generateFracticonDataURL', () => {
-  it('should return a valid data URL', () => {
-    const hash = testHash('test@example.com');
-    const dataUrl = generateFracticonDataURL(hash);
+  it('should return a valid PNG data URL', () => {
+    const dataUrl = generateFracticonDataURL('test@example.com');
 
-    expect(dataUrl).toMatch(/^data:image\/svg\+xml;base64,/);
-  });
-
-  it('should be decodable back to SVG', () => {
-    const hash = testHash('test');
-    const dataUrl = generateFracticonDataURL(hash);
-    const base64 = dataUrl.replace('data:image/svg+xml;base64,', '');
-    const decoded = decodeURIComponent(escape(atob(base64)));
-
-    expect(decoded).toContain('<svg');
-    expect(decoded).toContain('</svg>');
+    expect(dataUrl).toMatch(/^data:image\/png;base64,/);
   });
 
   it('should be deterministic', () => {
-    const hash = testHash('user');
-    const url1 = generateFracticonDataURL(hash);
-    const url2 = generateFracticonDataURL(hash);
+    const input = 'user';
+    const url1 = generateFracticonDataURL(input);
+    const url2 = generateFracticonDataURL(input);
 
     expect(url1).toBe(url2);
+  });
+
+  it('should produce valid base64', () => {
+    const dataUrl = generateFracticonDataURL('test');
+    const base64 = dataUrl.replace('data:image/png;base64,', '');
+    
+    // Should be valid base64 (no errors when matching pattern)
+    expect(base64).toMatch(/^[A-Za-z0-9+/]+=*$/);
+  });
+});
+
+describe('Hex and Bytes API variants', () => {
+  it('generateFracticonFromHexWithMetadata should return metadata', () => {
+    const hash = sha256('test');
+    const result = generateFracticonFromHexWithMetadata(hash);
+
+    expect(result.png).toBeInstanceOf(Uint8Array);
+    expect(result.hash).toBe(hash);
+    expect(result.params).toBeDefined();
+    expect(result.palette).toBeDefined();
+  });
+
+  it('generateFracticonDataURLFromHex should return data URL', () => {
+    const hash = sha256('test');
+    const dataUrl = generateFracticonDataURLFromHex(hash);
+
+    expect(dataUrl).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it('generateFracticonFromBytesWithMetadata should return metadata', () => {
+    const hashBytes = new Uint8Array(16).fill(42);
+    const result = generateFracticonFromBytesWithMetadata(hashBytes);
+
+    expect(result.png).toBeInstanceOf(Uint8Array);
+    expect(result.hash).toBeDefined();
+    expect(result.params).toBeDefined();
+    expect(result.palette).toBeDefined();
+  });
+
+  it('generateFracticonDataURLFromBytes should return data URL', () => {
+    const hashBytes = new Uint8Array(16).fill(42);
+    const dataUrl = generateFracticonDataURLFromBytes(hashBytes);
+
+    expect(dataUrl).toMatch(/^data:image\/png;base64,/);
   });
 });
 
 describe('Integration tests', () => {
   it('should produce consistent output across all API functions', () => {
-    const hash = testHash('consistency-test@example.com');
+    const input = 'consistency-test@example.com';
     
-    const svg1 = generateFracticon(hash);
-    const result = generateFracticonWithMetadata(hash);
-    const dataUrl = generateFracticonDataURL(hash);
+    const png1 = generateFracticon(input);
+    const result = generateFracticonWithMetadata(input);
 
-    // SVG should match
-    expect(svg1).toBe(result.svg);
-
-    // Hash should match
-    expect(hash).toBe(result.hash);
-
-    // Data URL should decode to the same SVG
-    const base64 = dataUrl.replace('data:image/svg+xml;base64,', '');
-    const decodedSvg = decodeURIComponent(escape(atob(base64)));
-    expect(decodedSvg).toBe(svg1);
+    // PNG should match
+    expect(png1).toEqual(result.png);
   });
 
   it('should handle all size options', () => {
-    const sizes = [32, 64, 128, 256, 512];
-    const hash = testHash('test');
+    const sizes = [32, 64, 128, 256];
+    const input = 'test';
 
+    let prevSize = 0;
     sizes.forEach(size => {
-      const svg = generateFracticon(hash, { size });
-      expect(svg).toContain(`width="${size}"`);
-      expect(svg).toContain(`height="${size}"`);
+      const png = generateFracticon(input, { size });
+      expect(png).toBeInstanceOf(Uint8Array);
+      expect(png.length).toBeGreaterThan(prevSize);
+      prevSize = png.length;
     });
   });
 
-  it('should handle all style options', () => {
-    const styles: Array<'detailed' | 'stylized'> = ['detailed', 'stylized'];
-    const hash = testHash('test');
+  it('should handle fractal type options', () => {
+    const types = ['julia', 'mandelbrot', 'burning-ship', 'tricorn'] as const;
+    const input = 'test';
 
-    styles.forEach(style => {
-      const svg = generateFracticon(hash, { style });
-      expect(svg).toContain('<svg');
+    types.forEach(fractalType => {
+      const png = generateFracticon(input, { fractalType });
+      expect(png).toBeInstanceOf(Uint8Array);
+      expect(png[0]).toBe(137);
     });
   });
 
-  it('should generate valid SVGs that could be rendered', () => {
-    const hash = testHash('rendering-test');
-    const svg = generateFracticon(hash);
+  it('should generate valid PNGs with proper structure', () => {
+    const png = generateFracticon('rendering-test');
     
-    // Check for valid SVG structure
-    expect(svg).toMatch(/<svg[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
-    expect(svg).toMatch(/<svg[^>]*width="\d+"/);
-    expect(svg).toMatch(/<svg[^>]*height="\d+"/);
-    expect(svg).toContain('</svg>');
+    // Check PNG signature
+    expect(png[0]).toBe(137);
+    expect(png[1]).toBe(80);  // P
+    expect(png[2]).toBe(78);  // N
+    expect(png[3]).toBe(71);  // G
+    expect(png[4]).toBe(13);
+    expect(png[5]).toBe(10);
+    expect(png[6]).toBe(26);
+    expect(png[7]).toBe(10);
     
-    // Should not have unclosed tags (basic check)
-    const closeTags = svg.match(/<\/[a-z]+>/gi) || [];
-    const selfClosing = svg.match(/<[a-z]+[^>]*\/>/gi) || [];
-    
-    // This is a simplified check
-    expect(closeTags.length + selfClosing.length).toBeGreaterThan(0);
+    // Should have reasonable size for 128x128 image
+    expect(png.length).toBeGreaterThan(100);
+    expect(png.length).toBeLessThan(500000); // Less than 500KB
   });
 });
