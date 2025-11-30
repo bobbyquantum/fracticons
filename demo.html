@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fracticons Demo</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #fff;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #888;
+        margin-bottom: 30px;
+      }
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      label {
+        font-size: 12px;
+        color: #aaa;
+      }
+      select,
+      input,
+      button {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background: #2a2a4a;
+        color: #fff;
+        font-size: 14px;
+      }
+      button {
+        cursor: pointer;
+        background: #4a4a8a;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: #5a5a9a;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .avatar-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .avatar-container {
+        width: 128px;
+        height: 128px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+      }
+      .avatar-container.circular {
+        border-radius: 50%;
+      }
+      .avatar-container img {
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+      }
+      .hash-label {
+        font-family: monospace;
+        font-size: 11px;
+        color: #888;
+        word-break: break-all;
+        text-align: center;
+      }
+      .params {
+        font-size: 10px;
+        color: #666;
+        text-align: center;
+      }
+      .custom-input {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .custom-input input {
+        width: 400px;
+        max-width: 90vw;
+      }
+      #customResult {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🌀 Fracticons Demo</h1>
+    <p class="subtitle">Deterministic fractal avatars generated from hashes</p>
+
+    <div class="custom-input">
+      <input
+        type="text"
+        id="customHash"
+        placeholder="Enter any text to generate a hash..."
+      />
+      <button onclick="generateCustom()">Generate</button>
+    </div>
+
+    <div id="customResult"></div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="fractalType">Fractal Type</label>
+        <select id="fractalType" onchange="regenerateAll()">
+          <option value="julia">Julia Set</option>
+          <option value="mandelbrot">Mandelbrot</option>
+          <option value="burning-ship">Burning Ship</option>
+          <option value="tricorn">Tricorn</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="preset">Julia Preset</label>
+        <select id="preset" onchange="regenerateAll()">
+          <option value="">Random (from hash)</option>
+          <option value="galaxy">Galaxy Spiral</option>
+          <option value="lightning">Lightning</option>
+          <option value="seahorse">Seahorse Valley</option>
+          <option value="snowflake">Snowflake</option>
+          <option value="spiral">Spiral</option>
+          <option value="starfish">Starfish</option>
+          <option value="sun">Sun</option>
+          <option value="rabbit">Douady Rabbit</option>
+          <option value="siegel">Siegel Disk</option>
+          <option value="dendrite">Dendrite</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="circular">Shape</label>
+        <select id="circular" onchange="regenerateAll()">
+          <option value="false">Square</option>
+          <option value="true">Circular</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="resolution">Resolution</label>
+        <select id="resolution" onchange="regenerateAll()">
+          <option value="32">32px</option>
+          <option value="64" selected>64px</option>
+          <option value="128">128px (slow)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="paletteStyle">Color Palette</label>
+        <select id="paletteStyle" onchange="regenerateAll()">
+          <option value="random">Random</option>
+          <option value="fire">🔥 Fire</option>
+          <option value="ocean">🌊 Ocean</option>
+          <option value="forest">🌲 Forest</option>
+          <option value="sunset">🌅 Sunset</option>
+          <option value="neon">💡 Neon</option>
+          <option value="pastel">🎀 Pastel</option>
+          <option value="monochrome">⬛ Monochrome</option>
+          <option value="grayscale">🔲 Grayscale</option>
+          <option value="rainbow">🌈 Rainbow</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>&nbsp;</label>
+        <button onclick="randomizeHashes()">🎲 Randomize All</button>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <script type="module">
+      // We'll need to build first, then load the module
+      // For now, let's inline a simple hash function and use dynamic import
+
+      // Simple hash function for demo
+      async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      // Store the module globally once loaded
+      let fracticons = null;
+
+      async function loadModule() {
+        try {
+          fracticons = await import("./dist/index.js");
+          return true;
+        } catch (e) {
+          console.error("Failed to load fracticons module:", e);
+          document.getElementById("grid").innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+            <p>⚠️ Module not built yet. Run <code>npm run build</code> first!</p>
+            <p style="color: #666; font-size: 12px;">Error: ${e.message}</p>
+          </div>
+        `;
+          return false;
+        }
+      }
+
+      // Sample hashes (simulating different user IDs, emails, etc.)
+      let sampleHashes = [];
+
+      async function generateSampleHashes() {
+        const samples = [
+          "alice@example.com",
+          "bob@example.com",
+          "charlie@example.com",
+          "diana@example.com",
+          "user-12345",
+          "user-67890",
+          "github:octocat",
+          "github:torvalds",
+          "random-uuid-1234-5678-9abc",
+          "hello world",
+          "fracticons are awesome!",
+          "deterministic-fractal-avatars",
+        ];
+
+        sampleHashes = await Promise.all(
+          samples.map(async (s) => ({
+            input: s,
+            hash: await sha256(s),
+          }))
+        );
+      }
+
+      function getOptions() {
+        const preset = document.getElementById("preset").value;
+        const fractalType = document.getElementById("fractalType").value;
+        const paletteStyle = document.getElementById("paletteStyle").value;
+        return {
+          circular: document.getElementById("circular").value === "true",
+          resolution: parseInt(document.getElementById("resolution").value),
+          size: 128,
+          fractalType: fractalType,
+          preset: preset || undefined,
+          paletteStyle: paletteStyle,
+        };
+      }
+
+      function renderAvatar(hash, input, container) {
+        if (!fracticons) return;
+
+        const options = getOptions();
+        const result = fracticons.generateFracticonWithMetadata(hash, options);
+
+        const card = document.createElement("div");
+        card.className = "avatar-card";
+
+        const avatarContainer = document.createElement("div");
+        avatarContainer.className =
+          "avatar-container" + (options.circular ? " circular" : "");
+
+        const img = document.createElement("img");
+        img.src = fracticons.generateFracticonDataURL(hash, options);
+        avatarContainer.appendChild(img);
+
+        const hashLabel = document.createElement("div");
+        hashLabel.className = "hash-label";
+        hashLabel.textContent = input || hash.substring(0, 16) + "...";
+
+        const params = document.createElement("div");
+        params.className = "params";
+        params.textContent = `${
+          result.params.fractalType
+        } | c: ${result.params.cx.toFixed(3)} + ${result.params.cy.toFixed(
+          3
+        )}i`;
+
+        card.appendChild(avatarContainer);
+        card.appendChild(hashLabel);
+        card.appendChild(params);
+        container.appendChild(card);
+      }
+
+      window.regenerateAll = async function () {
+        const grid = document.getElementById("grid");
+        grid.innerHTML = "";
+
+        for (const { input, hash } of sampleHashes) {
+          renderAvatar(hash, input, grid);
+        }
+      };
+
+      window.randomizeHashes = async function () {
+        const samples = [];
+        for (let i = 0; i < 12; i++) {
+          const random = Math.random().toString(36).substring(2);
+          samples.push({
+            input: `random-${i + 1}`,
+            hash: await sha256(random),
+          });
+        }
+        sampleHashes = samples;
+        regenerateAll();
+      };
+
+      window.generateCustom = async function () {
+        const input = document.getElementById("customHash").value;
+        if (!input) return;
+
+        const hash = await sha256(input);
+        const container = document.getElementById("customResult");
+        container.innerHTML = "";
+
+        // Generate square and circular versions
+        const options = getOptions();
+
+        for (const circular of [false, true]) {
+          const opts = { ...options, circular };
+          const dataUrl = fracticons.generateFracticonDataURL(hash, opts);
+
+          const card = document.createElement("div");
+          card.className = "avatar-card";
+          card.style.margin = "0 10px";
+
+          const avatarContainer = document.createElement("div");
+          avatarContainer.className =
+            "avatar-container" + (circular ? " circular" : "");
+
+          const img = document.createElement("img");
+          img.src = dataUrl;
+          avatarContainer.appendChild(img);
+
+          const label = document.createElement("div");
+          label.className = "hash-label";
+          label.textContent = circular ? "circular" : "square";
+
+          card.appendChild(avatarContainer);
+          card.appendChild(label);
+          container.appendChild(card);
+        }
+      };
+
+      // Initialize
+      async function init() {
+        await generateSampleHashes();
+        const loaded = await loadModule();
+        if (loaded) {
+          regenerateAll();
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

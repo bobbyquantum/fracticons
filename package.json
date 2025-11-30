@@ -1,0 +1,62 @@
+{
+  "name": "fracticons",
+  "version": "1.0.0",
+  "description": "Deterministic fractal avatar generator - like Gravatar/Identicon, but with beautiful Julia set fractals",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "benchmark": "npm run build && node --import tsx benchmark.ts",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "avatar",
+    "fractal",
+    "julia",
+    "identicon",
+    "gravatar",
+    "deterministic",
+    "png",
+    "hash",
+    "profile",
+    "image"
+  ],
+  "author": "bobbyquantum",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobbyquantum/fracticons.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bobbyquantum/fracticons/issues"
+  },
+  "homepage": "https://bobbyquantum.github.io/fracticons/",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.55.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
