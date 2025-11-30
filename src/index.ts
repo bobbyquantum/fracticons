@@ -1,11 +1,11 @@
 /**
  * Fracticons - Deterministic fractal avatar generator
  * 
- * Generate unique, beautiful fractal-based avatars from any string input.
+ * Generate unique, beautiful fractal-based avatars from a hash.
  * Like Gravatar/Identicon, but with fractals.
  */
 
-import { sha256, hashToNumbers } from './hash.js';
+import { hashToNumbers } from './hash.js';
 import { SeededRandom } from './random.js';
 import { generateJuliaParams, generateJuliaGrid, FractalParams } from './fractal.js';
 import { generatePalette, ColorPalette } from './color.js';
@@ -31,7 +31,7 @@ export interface FracticonOptions {
 export interface FracticonResult {
   /** The SVG string */
   svg: string;
-  /** The hash of the input */
+  /** The hash that was used */
   hash: string;
   /** The fractal parameters used */
   params: FractalParams;
@@ -40,9 +40,9 @@ export interface FracticonResult {
 }
 
 /**
- * Generate a deterministic fractal avatar SVG from an input string
+ * Generate a deterministic fractal avatar SVG from a hash
  * 
- * @param input - Any string (email, username, id, etc.)
+ * @param hash - A hexadecimal hash string (e.g., SHA-256 hash)
  * @param options - Generation options
  * @returns SVG string of the fractal avatar
  * 
@@ -50,27 +50,29 @@ export interface FracticonResult {
  * ```typescript
  * import { generateFracticon } from 'fracticons';
  * 
- * const svg = generateFracticon('user@example.com');
+ * // Use any hash - the caller is responsible for hashing
+ * const hash = 'a1b2c3d4e5f6...'; // your hash
+ * const svg = generateFracticon(hash);
  * document.getElementById('avatar').innerHTML = svg;
  * ```
  */
 export function generateFracticon(
-  input: string,
+  hash: string,
   options: FracticonOptions = {}
 ): string {
-  const result = generateFracticonWithMetadata(input, options);
+  const result = generateFracticonWithMetadata(hash, options);
   return result.svg;
 }
 
 /**
  * Generate a fractal avatar with full metadata
  * 
- * @param input - Any string (email, username, id, etc.)
+ * @param hash - A hexadecimal hash string (e.g., SHA-256 hash)
  * @param options - Generation options
  * @returns Object containing SVG and generation metadata
  */
 export function generateFracticonWithMetadata(
-  input: string,
+  hash: string,
   options: FracticonOptions = {}
 ): FracticonResult {
   const {
@@ -80,8 +82,7 @@ export function generateFracticonWithMetadata(
     style = 'detailed'
   } = options;
 
-  // Generate deterministic hash and seed
-  const hash = sha256(input);
+  // Convert hash to seed numbers
   const seeds = hashToNumbers(hash);
   const rng = new SeededRandom(seeds);
 
@@ -118,7 +119,7 @@ export function generateFracticonWithMetadata(
 /**
  * Generate a data URL for the fractal avatar
  * 
- * @param input - Any string (email, username, id, etc.)
+ * @param hash - A hexadecimal hash string (e.g., SHA-256 hash)
  * @param options - Generation options
  * @returns Data URL string that can be used in img src
  * 
@@ -126,32 +127,22 @@ export function generateFracticonWithMetadata(
  * ```typescript
  * import { generateFracticonDataURL } from 'fracticons';
  * 
- * const dataUrl = generateFracticonDataURL('user@example.com');
+ * const hash = 'a1b2c3d4e5f6...'; // your hash
+ * const dataUrl = generateFracticonDataURL(hash);
  * document.getElementById('avatar').src = dataUrl;
  * ```
  */
 export function generateFracticonDataURL(
-  input: string,
+  hash: string,
   options: FracticonOptions = {}
 ): string {
-  const svg = generateFracticon(input, options);
+  const svg = generateFracticon(hash, options);
   const base64 = btoa(unescape(encodeURIComponent(svg)));
   return `data:image/svg+xml;base64,${base64}`;
 }
 
-/**
- * Get the hash for an input without generating the full avatar
- * Useful for caching or comparison
- * 
- * @param input - Any string
- * @returns SHA-256 hash of the input
- */
-export function getFracticonHash(input: string): string {
-  return sha256(input);
-}
-
 // Re-export types and utilities for advanced usage
-export { sha256, hashToNumbers } from './hash.js';
+export { hashToNumbers } from './hash.js';
 export { SeededRandom } from './random.js';
 export { 
   generateJuliaParams, 
