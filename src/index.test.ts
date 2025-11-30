@@ -168,8 +168,11 @@ describe('generateFracticonFromBytes (binary API)', () => {
 
   it('should work with Web Crypto API style output', () => {
     // Simulate what you'd get from crypto.subtle.digest
+    // Use deterministic values instead of crypto.getRandomValues for test stability
     const hashBytes = new Uint8Array(32);
-    crypto.getRandomValues(hashBytes);
+    for (let i = 0; i < 32; i++) {
+      hashBytes[i] = (i * 17 + 42) % 256;
+    }
     
     const png = generateFracticonFromBytes(hashBytes);
 
