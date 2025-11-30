@@ -6,6 +6,19 @@ Generate unique, deterministic fractal avatars from any string. Beautiful, fast,
 [![CI](https://github.com/bobbyquantum/fracticons/actions/workflows/ci.yml/badge.svg)](https://github.com/bobbyquantum/fracticons/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+<p align="center">
+  <img src="samples/alice.png" width="100" alt="alice@example.com" />
+  <img src="samples/bob.png" width="100" alt="bob@example.com" />
+  <img src="samples/charlie.png" width="100" alt="charlie@example.com" />
+  <img src="samples/diana.png" width="100" alt="diana@example.com" />
+  <img src="samples/eve.png" width="100" alt="eve@example.com" />
+</p>
+
+<p align="center">
+  <a href="https://bobbyquantum.github.io/fracticons/">📚 Documentation</a> •
+  <a href="https://bobbyquantum.github.io/fracticons/demo">🎮 Live Demo</a>
+</p>
+
 ## ✨ Features
 
 - 🎨 **Beautiful fractals** - Julia sets with 10 curated color palettes
