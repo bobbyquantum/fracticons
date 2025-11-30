@@ -112,7 +112,7 @@ describe('generateFracticonDataURL', () => {
   it('should be decodable back to SVG', () => {
     const dataUrl = generateFracticonDataURL('test');
     const base64 = dataUrl.replace('data:image/svg+xml;base64,', '');
-    const decoded = Buffer.from(base64, 'base64').toString('utf-8');
+    const decoded = decodeURIComponent(escape(atob(base64)));
 
     expect(decoded).toContain('<svg');
     expect(decoded).toContain('</svg>');
@@ -166,7 +166,7 @@ describe('Integration tests', () => {
 
     // Data URL should decode to the same SVG
     const base64 = dataUrl.replace('data:image/svg+xml;base64,', '');
-    const decodedSvg = Buffer.from(base64, 'base64').toString('utf-8');
+    const decodedSvg = decodeURIComponent(escape(atob(base64)));
     expect(decodedSvg).toBe(svg1);
   });
 
